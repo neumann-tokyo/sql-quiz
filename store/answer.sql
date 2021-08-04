@@ -24,8 +24,8 @@ select
   ,lastweek_price
   ,price
   ,case
-    when diff > 0 then '^'
-    when diff < 0 then '_'
+    when diff > 0 then '/'
+    when diff < 0 then '\'
     else '-'
   end as mark
 from
