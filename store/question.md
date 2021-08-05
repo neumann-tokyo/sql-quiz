@@ -1,5 +1,9 @@
 # Sales difference
 
+## Database
+
+https://github.com/neumann-tokyo/sql-quiz/blob/main/store/init-db.sql
+
 ## English
 
 There is a `reports` table which has weekly sales of a coffee shop.
