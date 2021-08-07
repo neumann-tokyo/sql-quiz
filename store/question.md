@@ -2,7 +2,8 @@
 
 ## Database
 
-https://github.com/neumann-tokyo/sql-quiz/blob/main/store/init-db.sql
+* https://github.com/neumann-tokyo/sql-quiz/blob/main/store/store.db
+* https://github.com/neumann-tokyo/sql-quiz/blob/main/store/init-db.sql
 
 ## English
 
