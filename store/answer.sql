@@ -1,3 +1,6 @@
+.header on
+.mode column
+
 with
 with_lastweek_price as (
   select
