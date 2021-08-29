@@ -10,9 +10,7 @@ create table books(
   ,book_kind_id integer not null
   ,title varchar(500) not null
   ,publication_date timestamp not null
-  ,gape_count integer
-  ,isbn_10 varchar(10)
-  ,isbn_13 varchar(14)
+  ,page_count integer
   ,created_at timestamp default (datetime('now', 'localtime')) not null
   ,updated_at timestamp default (datetime('now', 'localtime')) not null
 
