@@ -63,28 +63,6 @@ create table book_images_books(
   ,FOREIGN KEY(book_id) REFERENCES books(id)
 );
 
-create table categories(
-  id integer primary key not null
-  ,parent_id integer not null
-  ,name varchar(100) not null
-  ,display_order integer not null
-  ,created_at timestamp default (datetime('now', 'localtime')) not null
-  ,updated_at timestamp default (datetime('now', 'localtime')) not null
-
-  ,FOREIGN KEY(parent_id) REFERENCES categories(id)
-);
-
-create table books_categories(
-  id integer primary key not null
-  ,category_id integer not null
-  ,book_id integer not null
-  ,created_at timestamp default (datetime('now', 'localtime')) not null
-  ,updated_at timestamp default (datetime('now', 'localtime')) not null
-
-  ,FOREIGN KEY(category_id) REFERENCES categories(id)
-  ,FOREIGN KEY(book_id) REFERENCES books(id)
-);
-
 create table customers(
   id integer primary key not null
   ,family_name varchar(100) not null

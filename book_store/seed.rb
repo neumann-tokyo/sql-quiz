@@ -1,5 +1,6 @@
 require "sqlite3"
 require 'ffaker'
+require 'securerandom'
 
 def fake_timestamp
   FFaker::Time.datetime.strftime("%FT%T.%3N")
@@ -53,7 +54,7 @@ database.transaction do |db|
   end
 
   # authors_books
-  BOOK_COUNT.times {|i|
+  BOOK_COUNT.times.map {|i|
   <<~SQL
     (#{i + 1}, #{rand(AUTHORS_COUNT) + 1}, #{i + 1}, '')
   SQL
@@ -65,9 +66,9 @@ database.transaction do |db|
       #{data}
     SQL
   end
-  (BOOK_COUNT / 2).times {|i|
+  (BOOK_COUNT / 2).times.map {|i|
   <<~SQL
-    (#{i + BOOK_COUNT}, #{rand(AUTHORS_COUNT) + 1}, #{i + 1}, '')
+    (#{i + 1 + BOOK_COUNT}, #{rand(AUTHORS_COUNT) + 1}, #{i + 1}, '')
   SQL
   }.join(',').tap do |data|
     db.execute <<~SQL
@@ -75,6 +76,92 @@ database.transaction do |db|
         authors_books(id, author_id, book_id, role)
       values
       #{data}
+    SQL
+  end
+
+  # publishers
+  BOOK_COUNT.times.map {|i|
+  <<~SQL
+    (#{i + 1}, "#{FFaker::Name.first_name}")
+  SQL
+  }.join(',').tap do |data|
+    db.execute <<~SQL
+      insert into
+        publishers (id, name)
+      values
+        #{data}
+      ;
+    SQL
+  end
+
+  # book_images
+  (BOOK_COUNT / 2).times.map {|i|
+    uuid = SecureRandom.uuid
+    <<~SQL
+      (#{i + 1}, "#{uuid}.jpg", "http://www.example.com/#{uuid}.jpg")
+    SQL
+  }.join(',').tap do |data|
+    db.execute <<~SQL
+      insert into
+        book_images (id, name, url)
+      values
+        #{data}
+      ;
+    SQL
+  end
+
+  # book_iamges_books
+  (BOOK_COUNT / 2).times.map {|i|
+    uuid = SecureRandom.uuid
+    <<~SQL
+      (#{i + 1}, #{i + 1}, #{i + 1}, #{i + 1})
+    SQL
+  }.join(',').tap do |data|
+    db.execute <<~SQL
+      insert into
+        book_images_books (id, book_image_id, book_id, display_order)
+      values
+        #{data}
+      ;
+    SQL
+  end
+
+  # customers
+  CUSTOMERS_COUNT = 1000
+  CUSTOMERS_COUNT.times.map {|i|
+    <<~SQL
+      (#{i + 1}, "#{FFaker::Name.last_name}", "#{FFaker::Name.first_name}", #{i + 1}, "#{FFaker::Internet.email}", "#{SecureRandom.hex(20)}")
+    SQL
+  }.join(',').tap do |data|
+    db.execute <<~SQL
+      insert into
+        customers (id, family_name, given_name, display_name, email, password_digest)
+      values
+        #{data}
+      ;
+    SQL
+  end
+
+  CUSTOMERS_COUNT.times.map {|i|
+    <<~SQL
+      (#{i + 1},
+        #{i + 1},
+        "#{FFaker::AddressUS.street_address}",
+        "#{FFaker::Address.city}",
+        "#{FFaker::AddressUS.state}",
+        "#{FFaker::Address.country}",
+        "#{FFaker::AddressUS.zip_code}",
+        "#{FFaker::PhoneNumber.short_phone_number}",
+        #{i.even? ? true : false}
+      )
+    SQL
+  }.join(',').tap do |data|
+    db.execute <<~SQL
+      insert into
+        customer_addresses (id, customer_id, address, city, state, country, postal_code, phone, default_address)
+      values
+        #{data}
+      ;
     SQL
   end
 
