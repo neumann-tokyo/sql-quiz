@@ -8,13 +8,17 @@ create table book_kinds(
 create table books(
   id integer primary key not null
   ,book_kind_id integer not null
+  ,publisher_id integer not null
   ,title varchar(500) not null
   ,publication_date timestamp not null
   ,page_count integer
+  ,price integer
+  ,tax real
   ,created_at timestamp default (datetime('now', 'localtime')) not null
   ,updated_at timestamp default (datetime('now', 'localtime')) not null
 
   ,FOREIGN KEY(book_kind_id) REFERENCES books(id)
+  ,FOREIGN KEY(publisher_id) REFERENCES publishers(id)
 );
 
 create table authors(
@@ -95,7 +99,6 @@ create table purchases(
   ,customer_id integer not null
   ,sum_price integer not null
   ,tax real not null
-  ,postage integer not null
   ,created_at timestamp default (datetime('now', 'localtime')) not null
   ,updated_at timestamp default (datetime('now', 'localtime')) not null
 

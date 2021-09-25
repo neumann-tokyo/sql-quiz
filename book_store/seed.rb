@@ -1,4 +1,4 @@
-require "sqlite3"
+require 'sqlite3'
 require 'ffaker'
 require 'securerandom'
 
@@ -22,16 +22,41 @@ database.transaction do |db|
     ;
   SQL
 
-  # books
-  BOOK_COUNT = 200
-  BOOK_COUNT.times.map {|i|
+  # publishers
+  PUBLISHER_COUNT = 50
+  PUBLISHER_COUNT.times.map {|i|
   <<~SQL
-    (#{i + 1}, #{rand(3) + 1}, "#{FFaker::Book.title}", "#{fake_timestamp}", #{rand(1000) + 100})
+    (#{i + 1}, "#{FFaker::Name.first_name}")
   SQL
   }.join(',').tap do |data|
     db.execute <<~SQL
       insert into
-        books (id, book_kind_id, title, publication_date, page_count)
+        publishers (id, name)
+      values
+        #{data}
+      ;
+    SQL
+  end
+
+  # books
+  BOOKS_COUNT = 200
+  BOOKS_COUNT.times.map {|i|
+  <<~SQL
+    (
+      #{i + 1},
+      #{rand(1..4)},
+      #{rand(1..PUBLISHER_COUNT)},
+      "#{FFaker::Book.title}",
+      "#{fake_timestamp}",
+      #{rand(100..1000)},
+      #{rand(200..10000)},
+      0.10
+    )
+  SQL
+  }.join(',').tap do |data|
+    db.execute <<~SQL
+      insert into
+        books (id, book_kind_id, publisher_id, title, publication_date, page_count, price, tax)
       values
         #{data}
       ;
@@ -54,7 +79,7 @@ database.transaction do |db|
   end
 
   # authors_books
-  BOOK_COUNT.times.map {|i|
+  BOOKS_COUNT.times.map {|i|
   <<~SQL
     (#{i + 1}, #{rand(AUTHORS_COUNT) + 1}, #{i + 1}, '')
   SQL
@@ -66,9 +91,9 @@ database.transaction do |db|
       #{data}
     SQL
   end
-  (BOOK_COUNT / 2).times.map {|i|
+  (BOOKS_COUNT / 2).times.map {|i|
   <<~SQL
-    (#{i + 1 + BOOK_COUNT}, #{rand(AUTHORS_COUNT) + 1}, #{i + 1}, '')
+    (#{i + 1 + BOOKS_COUNT}, #{rand(AUTHORS_COUNT) + 1}, #{i + 1}, '')
   SQL
   }.join(',').tap do |data|
     db.execute <<~SQL
@@ -79,23 +104,8 @@ database.transaction do |db|
     SQL
   end
 
-  # publishers
-  BOOK_COUNT.times.map {|i|
-  <<~SQL
-    (#{i + 1}, "#{FFaker::Name.first_name}")
-  SQL
-  }.join(',').tap do |data|
-    db.execute <<~SQL
-      insert into
-        publishers (id, name)
-      values
-        #{data}
-      ;
-    SQL
-  end
-
   # book_images
-  (BOOK_COUNT / 2).times.map {|i|
+  (BOOKS_COUNT / 2).times.map {|i|
     uuid = SecureRandom.uuid
     <<~SQL
       (#{i + 1}, "#{uuid}.jpg", "http://www.example.com/#{uuid}.jpg")
@@ -111,7 +121,7 @@ database.transaction do |db|
   end
 
   # book_iamges_books
-  (BOOK_COUNT / 2).times.map {|i|
+  (BOOKS_COUNT / 2).times.map {|i|
     uuid = SecureRandom.uuid
     <<~SQL
       (#{i + 1}, #{i + 1}, #{i + 1}, #{i + 1})
@@ -142,6 +152,7 @@ database.transaction do |db|
     SQL
   end
 
+  # customer_addresses
   CUSTOMERS_COUNT.times.map {|i|
     <<~SQL
       (#{i + 1},
@@ -165,5 +176,88 @@ database.transaction do |db|
     SQL
   end
 
+  # purchases
+  PURCHASES_COUNT = 10000
+  PURCHASES_COUNT.times.map {|i|
+    <<~SQL
+      (
+        #{i + 1},
+        #{rand(1..CUSTOMERS_COUNT)},
+        0,
+        0.10
+      )
+    SQL
+  }.join(',').tap do |data|
+    db.execute <<~SQL
+      insert into
+        purchases (id, customer_id, sum_price, tax)
+      values
+        #{data}
+      ;
+    SQL
+  end
 
+  # purchases_books
+  index = 1
+  while (index <= PURCHASES_COUNT) do
+    purchase_id = index
+    books = db.execute(<<~SQL)
+      select
+        id, price, tax
+      from
+        books
+      order by random()
+      limit #{rand(1..10)}
+    SQL
+
+    books.each do |book|
+      db.execute(<<~SQL)
+        insert into
+          purchases_books (id, purchase_id, book_id, price, tax)
+        values
+          (
+            #{index},
+            #{purchase_id},
+            #{book[0]},
+            #{book[1]},
+            #{book[2]}
+          )
+        ;
+      SQL
+      index += 1
+    end
+
+    sum_price = books.map {|book| book[1] }.sum
+    db.execute(<<~SQL)
+      update purchases
+      set sum_price = #{sum_price}
+      where id = #{purchase_id};
+    SQL
+  end
+
+  db.execute(<<~SQL)
+    delete from purchases where sum_price = 0;
+  SQL
+
+  # reviews
+  REVIEWS_COUNT = 10000
+  REVIEWS_COUNT.times.map {|i|
+    <<~SQL
+      (
+        #{i + 1},
+        #{rand(1..BOOKS_COUNT)},
+        #{rand(1..CUSTOMERS_COUNT)},
+        #{rand(1..5)},
+        "#{FFaker::Lorem.paragraphs.join(' ')}"
+      )
+    SQL
+  }.join(',').tap do |data|
+    db.execute <<~SQL
+      insert into
+        reviews (id, book_id, customer_id, point, comment)
+      values
+        #{data}
+      ;
+    SQL
+  end
 end
